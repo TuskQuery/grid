@@ -74,11 +74,14 @@ function formatJson(value: unknown): string {
     if (typeof value === 'string') {
         return value;
     }
-    try {
-        return JSON.stringify(value);
-    } catch (_e) {
-        return String(value);
-    }
+    // Avoid try/catch in the hot path: Perry's native codegen leaks a
+    // try-frame on early-return inside a try block, and the row builder
+    // calls this 20+ times per visible row × every scroll-tick rebuild,
+    // tripping `MAX_TRY_DEPTH=128` after a few hundred cells. The
+    // consumer (tusk-app) is responsible for sanitizing values so
+    // `JSON.stringify` doesn't throw (no circular refs, no BigInts —
+    // BigInts get formatNumeric anyway).
+    return JSON.stringify(value);
 }
 
 function formatArray(value: unknown): string {
