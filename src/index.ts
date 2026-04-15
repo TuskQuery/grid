@@ -13,3 +13,5 @@ export {
 } from './virtualization';
 export type { VisibleWindow, VisibleWindowInput } from './virtualization';
 export { formatCell, NULL_DISPLAY } from './cell-renderers/format';
+export { SelectionModel } from './selection';
+export type { CellAddress } from './selection';

@@ -40,8 +40,17 @@ export interface GridProps {
     rows: Row[];
     /** Fires when the user commits an inline edit. */
     onCellCommit?: (rowIndex: number, columnIndex: number, newValue: unknown) => void;
-    /** Fires when the user selects row(s). */
+    /**
+     * Fires when the user changes the row selection. The argument is an
+     * array (instead of a single index) so the future range/toggle
+     * variants don't need a signature change.
+     */
     onSelect?: (rowIndices: number[]) => void;
+    /**
+     * Fires when the user clicks into a specific cell (also implies
+     * selecting the row). `null` means selection was cleared.
+     */
+    onCellSelect?: (cell: { rowIndex: number; columnIndex: number } | null) => void;
 }
 
 /**

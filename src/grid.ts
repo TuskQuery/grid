@@ -37,6 +37,7 @@ import {
     totalContentHeight,
     type VisibleWindow,
 } from './virtualization';
+import { SelectionModel } from './selection';
 
 const OVERSCAN = 5;
 const TICK_MS = 16; // ~60fps recompute cadence
@@ -59,6 +60,9 @@ interface GridState {
     rowContainer: Widget;
     lastWindow: VisibleWindow;
     viewportHeight: number;
+    selection: SelectionModel;
+    onSelect: ((rowIndices: number[]) => void) | null;
+    onCellSelect: ((cell: { rowIndex: number; columnIndex: number } | null) => void) | null;
 }
 
 // Per-grid state lives in a module-level Map keyed by an integer id so
@@ -105,6 +109,9 @@ export function Grid(props: GridProps): { handle: Widget; api: GridApi } {
         rowContainer: rowContainer,
         lastWindow: { firstIndex: 0, endIndex: 0 },
         viewportHeight: DEFAULT_VIEWPORT_HEIGHT,
+        selection: new SelectionModel(),
+        onSelect: props.onSelect !== undefined ? props.onSelect : null,
+        onCellSelect: props.onCellSelect !== undefined ? props.onCellSelect : null,
     };
     STATES.set(id, state);
 
@@ -126,8 +133,15 @@ export function Grid(props: GridProps): { handle: Widget; api: GridApi } {
                 return;
             }
             st.rows = rows;
+            st.selection.clear();
             st.lastWindow = { firstIndex: 0, endIndex: 0 };
             rebuildVisibleRows(st);
+            if (st.onSelect !== null) {
+                st.onSelect([]);
+            }
+            if (st.onCellSelect !== null) {
+                st.onCellSelect(null);
+            }
         },
         scrollToRow(_index: number): void {
             // scrollViewSetOffset wiring lands in the next pass — we need
@@ -155,6 +169,35 @@ export function setViewportHeight(api: GridApi, heightPx: number): void {
             rebuildVisibleRows(st);
             return;
         }
+    }
+}
+
+/**
+ * Reverse-lookup a grid id from its state object. Used by the row
+ * builder closure so the click handler can find the right state slot.
+ * O(n) over the (small) number of grids in the app.
+ */
+function stateIdFor(st: GridState): number {
+    for (const [id, candidate] of STATES) {
+        if (candidate === st) {
+            return id;
+        }
+    }
+    return 0;
+}
+
+function handleCellClick(id: number, rowIndex: number, columnIndex: number): void {
+    const st = STATES.get(id);
+    if (st === undefined) {
+        return;
+    }
+    st.selection.selectCell(rowIndex, columnIndex);
+    rebuildVisibleRows(st);
+    if (st.onSelect !== null) {
+        st.onSelect([rowIndex]);
+    }
+    if (st.onCellSelect !== null) {
+        st.onCellSelect({ rowIndex: rowIndex, columnIndex: columnIndex });
     }
 }
 
@@ -193,12 +236,28 @@ function rebuildVisibleRows(st: GridState): void {
     }
     const win = st.lastWindow;
     widgetClearChildren(st.rowContainer);
+    const myId = stateIdFor(st);
     for (let i = win.firstIndex; i < win.endIndex; i++) {
         const row = st.rows[i];
         if (row === undefined) {
             continue;
         }
-        widgetAddChild(st.rowContainer, buildRow(st.columns, row));
+        const isSelected = st.selection.isRowSelected(i);
+        const activeCell = st.selection.activeCell;
+        const activeColumnIndex = activeCell !== null && activeCell.rowIndex === i
+            ? activeCell.columnIndex
+            : null;
+        widgetAddChild(
+            st.rowContainer,
+            buildRow(st.columns, row, {
+                rowIndex: i,
+                isSelected: isSelected,
+                activeColumnIndex: activeColumnIndex,
+                onCellClick: (rowIndex: number, columnIndex: number) => {
+                    handleCellClick(myId, rowIndex, columnIndex);
+                },
+            })
+        );
     }
     widgetSetHeight(st.topSpacer, win.firstIndex * ROW_HEIGHT);
     widgetSetHeight(
