@@ -7,50 +7,67 @@
 // info that Perry's `widgetSetOnClick` callback doesn't carry — they
 // land when the click signature widens (or the inline editor in D11
 // brings its own event-aware path).
+//
+// Sentinel `-1` for "nothing selected" instead of `null`: Perry's
+// native codegen has occasional issues initializing nullable class
+// fields across module boundaries, and reading an uninitialized field
+// as `0` would falsely mark the first row selected. Sentinels are
+// always safe.
 
 export interface CellAddress {
     rowIndex: number;
     columnIndex: number;
 }
 
+const NONE = -1;
+
 export class SelectionModel {
-    private _selectedRow: number | null = null;
-    private _activeCell: CellAddress | null = null;
+    public selectedRowIndex: number = NONE;
+    public activeRowIndex: number = NONE;
+    public activeColumnIndex: number = NONE;
 
+    constructor() {
+        this.selectedRowIndex = NONE;
+        this.activeRowIndex = NONE;
+        this.activeColumnIndex = NONE;
+    }
+
+    /** Backwards-compatible getter. Returns null when nothing's selected. */
     get selectedRow(): number | null {
-        return this._selectedRow;
+        return this.selectedRowIndex === NONE ? null : this.selectedRowIndex;
     }
 
+    /** Backwards-compatible getter. Returns null when nothing's selected. */
     get activeCell(): CellAddress | null {
-        return this._activeCell;
+        if (this.activeRowIndex === NONE) {
+            return null;
+        }
+        return { rowIndex: this.activeRowIndex, columnIndex: this.activeColumnIndex };
     }
 
-    /** Select a row, clear active cell. */
     selectRow(rowIndex: number): void {
-        this._selectedRow = rowIndex;
-        this._activeCell = null;
+        this.selectedRowIndex = rowIndex;
+        this.activeRowIndex = NONE;
+        this.activeColumnIndex = NONE;
     }
 
-    /** Select a cell — implies selecting its parent row too. */
     selectCell(rowIndex: number, columnIndex: number): void {
-        this._selectedRow = rowIndex;
-        this._activeCell = { rowIndex: rowIndex, columnIndex: columnIndex };
+        this.selectedRowIndex = rowIndex;
+        this.activeRowIndex = rowIndex;
+        this.activeColumnIndex = columnIndex;
     }
 
     clear(): void {
-        this._selectedRow = null;
-        this._activeCell = null;
+        this.selectedRowIndex = NONE;
+        this.activeRowIndex = NONE;
+        this.activeColumnIndex = NONE;
     }
 
     isRowSelected(rowIndex: number): boolean {
-        return this._selectedRow === rowIndex;
+        return this.selectedRowIndex === rowIndex;
     }
 
     isCellActive(rowIndex: number, columnIndex: number): boolean {
-        const a = this._activeCell;
-        if (a === null) {
-            return false;
-        }
-        return a.rowIndex === rowIndex && a.columnIndex === columnIndex;
+        return this.activeRowIndex === rowIndex && this.activeColumnIndex === columnIndex;
     }
 }

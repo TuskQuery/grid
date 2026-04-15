@@ -24,6 +24,8 @@ import {
     widgetClearChildren,
     widgetSetHeight,
     widgetMatchParentWidth,
+    widgetSetHugging,
+    stackSetDistribution,
     scrollviewSetChild,
     scrollViewGetOffset,
     type Widget,
@@ -78,26 +80,42 @@ export function Grid(props: GridProps): { handle: Widget; api: GridApi } {
 
     const header = buildColumnHeader(props.columns);
     widgetAddChild(root, header);
+    widgetMatchParentWidth(header);
 
     const scrollView = ScrollView();
 
     const scrollBody = VStack(0, []);
+    // Children inside the ScrollView keep their intrinsic heights —
+    // GravityAreas (-1) per mango's working pattern. With `0` (fill)
+    // the spacers would stretch to the same size and squash the row
+    // container.
+    stackSetDistribution(scrollBody, -1);
+
     const topSpacer = Spacer();
-    widgetSetHeight(topSpacer, 0);
     const rowContainer = VStack(0, []);
+    stackSetDistribution(rowContainer, -1);
     const bottomSpacer = Spacer();
+
+    widgetAddChild(scrollBody, topSpacer);
+    widgetAddChild(scrollBody, rowContainer);
+    widgetAddChild(scrollBody, bottomSpacer);
+    // Set spacer heights AFTER attach.
+    widgetSetHeight(topSpacer, 0);
     widgetSetHeight(
         bottomSpacer,
         totalContentHeight(props.rows.length, ROW_HEIGHT)
     );
-    widgetAddChild(scrollBody, topSpacer);
-    widgetAddChild(scrollBody, rowContainer);
-    widgetAddChild(scrollBody, bottomSpacer);
+
     scrollviewSetChild(scrollView, scrollBody);
 
     widgetAddChild(root, scrollView);
-    // matchParent only works once the widget is in the tree.
     widgetMatchParentWidth(scrollView);
+    // Low hugging priority on the ScrollView so it expands to fill all
+    // remaining vertical space below the (intrinsic-height) header.
+    // Without this the parent VStack could collapse the scroll area to
+    // its content's intrinsic height (28000px) and overflow / clip.
+    widgetSetHugging(scrollView, 1);
+    widgetMatchParentWidth(scrollBody);
 
     const state: GridState = {
         columns: props.columns,

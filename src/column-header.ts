@@ -22,10 +22,8 @@ export const HEADER_HEIGHT = 36;
 
 export function buildColumnHeader(columns: ColumnDef[]): Widget {
     const root = VStack(0, []);
-    widgetSetHeight(root, HEADER_HEIGHT);
 
     const cells = HStack(0, []);
-    widgetSetHeight(cells, HEADER_HEIGHT - 1);
     for (let i = 0; i < columns.length; i++) {
         const col = columns[i];
         if (col === undefined) {
@@ -37,26 +35,33 @@ export function buildColumnHeader(columns: ColumnDef[]): Widget {
     // column when the data rows are narrower than the viewport.
     widgetAddChild(cells, Spacer());
     widgetAddChild(root, cells);
+    // Size the row of cells AFTER its children are in the tree —
+    // Perry's auto-layout backend ignores width/height set on a widget
+    // before it has a superview (and logs `match_parent_width: view
+    // has no superview` during initial render).
+    widgetSetHeight(cells, HEADER_HEIGHT - 1);
 
     // Hairline under the header.
     widgetAddChild(root, Divider());
+
+    widgetSetHeight(root, HEADER_HEIGHT);
     return root;
 }
 
 function buildHeaderCell(col: ColumnDef): Widget {
     const cell = VStack(2, []);
-    widgetSetWidth(cell, col.widthPx);
-    setPadding(cell, 4, 8, 4, 8);
 
     const name = Text(col.name);
-    textSetFontSize(name, 13);
     widgetAddChild(cell, name);
+    textSetFontSize(name, 13);
 
     const typeLabel = Text(col.typeHint);
-    textSetFontSize(typeLabel, 10);
-    // Muted gray.
-    textSetColor(typeLabel, 0.55, 0.55, 0.55, 1);
     widgetAddChild(cell, typeLabel);
+    textSetFontSize(typeLabel, 10);
+    textSetColor(typeLabel, 0.55, 0.55, 0.55, 1);
 
+    // Size the cell only after both children are in the tree.
+    widgetSetWidth(cell, col.widthPx);
+    setPadding(cell, 4, 8, 4, 8);
     return cell;
 }
