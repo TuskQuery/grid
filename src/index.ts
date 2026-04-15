@@ -1,4 +1,4 @@
-export { Grid } from './grid';
+export { Grid, ROW_HEIGHT, HEADER_HEIGHT, setViewportHeight } from './grid';
 export type {
     ColumnDef,
     CellRendererKey,
@@ -6,3 +6,10 @@ export type {
     GridProps,
     GridApi,
 } from './types';
+export {
+    computeVisibleWindow,
+    windowsEqual,
+    totalContentHeight,
+} from './virtualization';
+export type { VisibleWindow, VisibleWindowInput } from './virtualization';
+export { formatCell, NULL_DISPLAY } from './cell-renderers/format';
