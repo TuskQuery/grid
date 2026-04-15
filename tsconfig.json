@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "lib": ["ES2022", "DOM"],
+    "types": ["bun"],
+    "rootDir": ".",
+    "outDir": "./dist",
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "perry/*": ["../../perry/perry/types/perry/*"]
+    }
+  },
+  "include": ["src/**/*", "tests/**/*"]
+}

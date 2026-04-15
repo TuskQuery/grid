@@ -1,0 +1,18 @@
+{
+  "name": "@tusk/grid",
+  "version": "0.1.0",
+  "description": "Virtualized data-grid component for Tusk. Postgres-agnostic: exposes a ColumnDef / Row shape and cell-renderer plugins, takes rows from any source.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": ["tusk", "grid", "perry", "native", "datagrid", "table"],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.7.0"
+  }
+}
